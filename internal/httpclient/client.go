@@ -39,13 +39,17 @@ func NewHTTPClient(userAgent string, reqPerSecond float64, cacheEnabled bool) *H
 }
 
 func (c *HTTPClient) Get(ctx context.Context, url string) ([]byte, error) {
+	return c.GetWithProgress(ctx, url, false)
+}
+
+func (c *HTTPClient) GetWithProgress(ctx context.Context, url string, showProgress bool) ([]byte, error) {
 	// Check cache first
 	if cached := c.cache.Get(url); cached != nil {
 		return cached, nil
 	}
 
 	// Rate limit
-	if err := c.rateLimiter.Wait(ctx); err != nil {
+	if err := c.rateLimiter.WaitWithProgress(ctx, showProgress); err != nil {
 		return nil, err
 	}
 
@@ -147,6 +151,10 @@ func NewRateLimiter(reqPerSecond float64) *RateLimiter {
 }
 
 func (rl *RateLimiter) Wait(ctx context.Context) error {
+	return rl.WaitWithProgress(ctx, false)
+}
+
+func (rl *RateLimiter) WaitWithProgress(ctx context.Context, showProgress bool) error {
 	for {
 		rl.mu.Lock()
 		now := time.Now()
@@ -163,11 +171,46 @@ func (rl *RateLimiter) Wait(ctx context.Context) error {
 		waitTime := time.Duration((1.0-rl.tokens)/rl.refillRate) * time.Second
 		rl.mu.Unlock()
 
+		// Show countdown if enabled and wait time is significant
+		if showProgress && waitTime > 500*time.Millisecond {
+			if err := rl.waitWithCountdown(ctx, waitTime); err != nil {
+				return err
+			}
+		} else {
+			select {
+			case <-time.After(waitTime):
+				// Continue loop
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+}
+
+func (rl *RateLimiter) waitWithCountdown(ctx context.Context, duration time.Duration) error {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	start := time.Now()
+	end := start.Add(duration)
+
+	for {
 		select {
-		case <-time.After(waitTime):
-			// Continue loop
+		case <-ticker.C:
+			remaining := time.Until(end)
+			if remaining <= 0 {
+				fmt.Printf("\r    Rate limit: ready        \r")
+				return nil
+			}
+			fmt.Printf("\r    Rate limit: waiting %.1fs...", remaining.Seconds())
 		case <-ctx.Done():
+			fmt.Printf("\r                              \r")
 			return ctx.Err()
+		}
+
+		if time.Now().After(end) {
+			fmt.Printf("\r    Rate limit: ready        \r")
+			return nil
 		}
 	}
 }

@@ -74,7 +74,7 @@ func (s *RedditSource) fetchSubreddit(ctx context.Context, subreddit string, cfg
 
 	url := fmt.Sprintf("https://www.reddit.com/r/%s/%s.json?t=%s&limit=100", subreddit, sort, timeFilter)
 
-	data, err := s.client.Get(ctx, url)
+	data, err := s.client.GetWithProgress(ctx, url, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch subreddit %s: %w", subreddit, err)
 	}
