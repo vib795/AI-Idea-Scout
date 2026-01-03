@@ -90,8 +90,8 @@ func (a *App) Fetch(ctx context.Context, opts FetchOptions) error {
 
 	fmt.Printf("Fetching from %d source(s)...\n", len(sourceNames))
 
-	for _, name := range sourceNames {
-		fmt.Printf("\n[%s] Fetching...\n", name)
+	for i, name := range sourceNames {
+		fmt.Printf("\n[%d/%d] [%s] Fetching...\n", i+1, len(sourceNames), name)
 		source, err := sources.GetSource(name, a.cfg)
 		if err != nil {
 			fmt.Printf("  ✗ Error: %v\n", err)

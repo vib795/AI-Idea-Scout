@@ -53,12 +53,15 @@ func (s *RedditSource) RatePolicy() RatePolicy {
 func (s *RedditSource) Fetch(ctx context.Context, cfg SourceConfig) ([]RawItem, error) {
 	var allItems []RawItem
 
-	for _, subreddit := range s.cfg.Sources.Reddit.Subreddits {
+	totalSubs := len(s.cfg.Sources.Reddit.Subreddits)
+	for i, subreddit := range s.cfg.Sources.Reddit.Subreddits {
+		fmt.Printf("  [%d/%d] Fetching r/%s...\n", i+1, totalSubs, subreddit)
 		items, err := s.fetchSubreddit(ctx, subreddit, cfg)
 		if err != nil {
-			// Log error but continue with other subreddits
+			fmt.Printf("    ! Error fetching r/%s: %v\n", subreddit, err)
 			continue
 		}
+		fmt.Printf("    ✓ Got %d items from r/%s\n", len(items), subreddit)
 		allItems = append(allItems, items...)
 	}
 

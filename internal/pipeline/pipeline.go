@@ -110,15 +110,15 @@ func (p *Pipeline) ExtractIdeas(ctx context.Context, maxAnalyze int, force bool)
 		items = items[:maxAnalyze]
 	}
 
-	fmt.Printf("Extracting ideas from %d items...\n", len(items))
+	fmt.Printf("Extracting ideas from %d items (this may take a while)...\n", len(items))
 
 	totalIdeas := 0
 	for i, item := range items {
-		fmt.Printf("  [%d/%d] Processing %s...\n", i+1, len(items), item.Title)
+		fmt.Printf("  [%d/%d] Analyzing: %s\n", i+1, len(items), truncateString(item.Title, 60))
 
 		ideas, err := p.llm.ExtractIdeas(ctx, item, p.db)
 		if err != nil {
-			fmt.Printf("    ! Error: %v\n", err)
+			fmt.Printf("    ✗ Error: %v\n", err)
 			continue
 		}
 
@@ -273,4 +273,11 @@ func cleanText(s string) string {
 	// Remove URLs
 	s = regexp.MustCompile(`https?://\S+`).ReplaceAllString(s, "")
 	return strings.TrimSpace(s)
+}
+
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
