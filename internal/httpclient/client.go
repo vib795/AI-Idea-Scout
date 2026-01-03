@@ -155,6 +155,26 @@ func (rl *RateLimiter) Wait(ctx context.Context) error {
 }
 
 func (rl *RateLimiter) WaitWithProgress(ctx context.Context, showProgress bool) error {
+	// Check if we can proceed immediately
+	rl.mu.Lock()
+	now := time.Now()
+	elapsed := now.Sub(rl.lastRefill).Seconds()
+	rl.tokens = math.Min(rl.maxTokens, rl.tokens+elapsed*rl.refillRate)
+	rl.lastRefill = now
+
+	if rl.tokens >= 1.0 {
+		rl.tokens -= 1.0
+		rl.mu.Unlock()
+		return nil
+	}
+	rl.mu.Unlock()
+
+	// Need to wait - show progress if enabled
+	if showProgress {
+		return rl.waitWithCountdown(ctx)
+	}
+
+	// No progress display - use simple wait
 	for {
 		rl.mu.Lock()
 		now := time.Now()
@@ -171,46 +191,44 @@ func (rl *RateLimiter) WaitWithProgress(ctx context.Context, showProgress bool) 
 		waitTime := time.Duration((1.0-rl.tokens)/rl.refillRate) * time.Second
 		rl.mu.Unlock()
 
-		// Show countdown if enabled and wait time is significant
-		if showProgress && waitTime > 500*time.Millisecond {
-			if err := rl.waitWithCountdown(ctx, waitTime); err != nil {
-				return err
-			}
-		} else {
-			select {
-			case <-time.After(waitTime):
-				// Continue loop
-			case <-ctx.Done():
-				return ctx.Err()
-			}
+		select {
+		case <-time.After(waitTime):
+			// Continue loop
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }
 
-func (rl *RateLimiter) waitWithCountdown(ctx context.Context, duration time.Duration) error {
+func (rl *RateLimiter) waitWithCountdown(ctx context.Context) error {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
-
-	start := time.Now()
-	end := start.Add(duration)
 
 	for {
 		select {
 		case <-ticker.C:
-			remaining := time.Until(end)
-			if remaining <= 0 {
-				fmt.Printf("\r    Rate limit: ready        \r")
+			rl.mu.Lock()
+			now := time.Now()
+			elapsed := now.Sub(rl.lastRefill).Seconds()
+			rl.tokens = math.Min(rl.maxTokens, rl.tokens+elapsed*rl.refillRate)
+			rl.lastRefill = now
+
+			if rl.tokens >= 1.0 {
+				rl.tokens -= 1.0
+				rl.mu.Unlock()
+				fmt.Printf("\r                              \r")
 				return nil
 			}
-			fmt.Printf("\r    Rate limit: waiting %.1fs...", remaining.Seconds())
+
+			// Calculate remaining wait time
+			waitTime := (1.0 - rl.tokens) / rl.refillRate
+			rl.mu.Unlock()
+
+			fmt.Printf("\r    Rate limit: waiting %.1fs...", waitTime)
+
 		case <-ctx.Done():
 			fmt.Printf("\r                              \r")
 			return ctx.Err()
-		}
-
-		if time.Now().After(end) {
-			fmt.Printf("\r    Rate limit: ready        \r")
-			return nil
 		}
 	}
 }
