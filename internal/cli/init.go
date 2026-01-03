@@ -8,8 +8,13 @@ import (
 	"github.com/vib795/AI-Idea-Scout/internal/config"
 )
 
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Configuration management commands",
+}
+
 var initCmd = &cobra.Command{
-	Use:   "config init",
+	Use:   "init",
 	Short: "Initialize configuration file",
 	Long:  "Create a default configuration file with example values",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,4 +53,5 @@ var initCmd = &cobra.Command{
 
 func init() {
 	initCmd.Flags().Bool("force", false, "Overwrite existing config file")
+	configCmd.AddCommand(initCmd)
 }

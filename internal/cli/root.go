@@ -29,17 +29,15 @@ It provides:
 - Interactive triage workflow`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip config loading for commands that don't need it
-		if cmd.Name() == "version" || cmd.Name() == "help" {
+		cmdPath := cmd.CommandPath()
+		if cmd.Name() == "version" || cmd.Name() == "help" ||
+		   cmdPath == "ideascout config init" || cmd.Name() == "completion" {
 			return nil
 		}
 
 		var err error
 		cfg, err = config.Load(cfgFile)
 		if err != nil {
-			// For init command, we allow missing config
-			if cmd.Name() == "init" {
-				return nil
-			}
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 		return nil
@@ -59,7 +57,7 @@ func SetVersion(v, c, d string) {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/ideascout/config.yaml)")
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(fetchCmd)
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(listCmd)
