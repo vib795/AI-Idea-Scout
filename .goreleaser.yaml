@@ -10,11 +10,12 @@ builds:
     main: ./cmd/ideascout
     binary: ideascout
     env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
+    flags:
+      - -tags=fts5
     goos:
       - linux
       - darwin
-      - windows
     goarch:
       - amd64
       - arm64

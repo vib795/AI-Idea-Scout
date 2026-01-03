@@ -12,7 +12,7 @@ help: ## Show this help message
 
 build: ## Build the binary
 	@echo "Building ideascout..."
-	@go build -ldflags "$(LDFLAGS)" -o bin/ideascout ./cmd/ideascout
+	@go build -tags fts5 -ldflags "$(LDFLAGS)" -o bin/ideascout ./cmd/ideascout
 
 install: build ## Install the binary to $(GOPATH)/bin
 	@echo "Installing ideascout..."
@@ -20,7 +20,7 @@ install: build ## Install the binary to $(GOPATH)/bin
 
 test: ## Run tests
 	@echo "Running tests..."
-	@go test -v -race -cover ./...
+	@go test -tags fts5 -v -race -cover ./...
 
 lint: ## Run linters
 	@echo "Running golangci-lint..."

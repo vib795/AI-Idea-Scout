@@ -30,8 +30,9 @@ It provides:
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip config loading for commands that don't need it
 		cmdPath := cmd.CommandPath()
-		if cmd.Name() == "version" || cmd.Name() == "help" ||
-		   cmdPath == "ideascout config init" || cmd.Name() == "completion" {
+		if cmd.Name() == "version" || cmd.Name() == "help" || cmd.Name() == "completion" ||
+		   cmdPath == "ideascout config init" ||
+		   cmdPath == "ideascout db migrate" {
 			return nil
 		}
 
