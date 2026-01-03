@@ -56,8 +56,7 @@ func (p *Pipeline) Normalize(ctx context.Context, force bool) error {
 		}
 
 		// Update normalized text and content hash
-		hash := sha256.Sum256([]byte(normalizedText + item.URL.String))
-		contentHash := fmt.Sprintf("%x", hash)
+		_ = sha256.Sum256([]byte(normalizedText + item.URL.String))
 
 		// Note: In a real implementation, we'd update these fields
 		// For now, mark as normalized

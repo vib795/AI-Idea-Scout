@@ -14,18 +14,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/vib795/AI-Idea-Scout/internal/config"
 	"github.com/vib795/AI-Idea-Scout/internal/db"
-	"github.com/vib795/AI-Idea-Scout/internal/fetch"
+	"github.com/vib795/AI-Idea-Scout/internal/httpclient"
 )
 
 type RSSSource struct {
 	cfg    *config.Config
-	client *fetch.HTTPClient
+	client *httpclient.HTTPClient
 }
 
 func NewRSSSource(cfg *config.Config) *RSSSource {
 	return &RSSSource{
 		cfg: cfg,
-		client: fetch.NewHTTPClient(
+		client: httpclient.NewHTTPClient(
 			"ideascout/1.0 (AI Idea Scout; +https://github.com/vib795/AI-Idea-Scout)",
 			0.5, // 0.5 req/sec for RSS feeds
 			true,

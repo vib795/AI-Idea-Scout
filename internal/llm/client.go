@@ -20,13 +20,14 @@ type Client struct {
 }
 
 func NewClient(apiKey, model, promptVersion string) *Client {
+	client := anthropic.NewClient(
+		option.WithAPIKey(apiKey),
+	)
 	return &Client{
 		apiKey:        apiKey,
 		model:         model,
 		promptVersion: promptVersion,
-		client: anthropic.NewClient(
-			option.WithAPIKey(apiKey),
-		),
+		client:        &client,
 	}
 }
 
@@ -48,15 +49,17 @@ func (c *Client) ExtractIdeas(ctx context.Context, content *db.RawContent, datab
 	prompt := c.buildExtractionPrompt(content)
 
 	// Call Claude
+	maxTokens := int64(4096)
+	systemPrompt := extractionSystemPrompt
 	message, err := c.client.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.F(c.model),
-		MaxTokens: anthropic.Int(4096),
-		Messages: anthropic.F([]anthropic.MessageParam{
+		Model:     anthropic.Model(c.model),
+		MaxTokens: maxTokens,
+		Messages: []anthropic.MessageParam{
 			anthropic.NewUserMessage(anthropic.NewTextBlock(prompt)),
-		}),
-		System: anthropic.F([]anthropic.TextBlockParam{
-			anthropic.NewTextBlock(extractionSystemPrompt),
-		}),
+		},
+		System: []anthropic.TextBlockParam{
+			{Type: "text", Text: systemPrompt},
+		},
 	})
 
 	if err != nil {
@@ -143,12 +146,13 @@ Previous response:
 
 Please provide the corrected JSON array now:`, previousResponse)
 
+	maxTokens := int64(4096)
 	message, err := c.client.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.F(c.model),
-		MaxTokens: anthropic.Int(4096),
-		Messages: anthropic.F([]anthropic.MessageParam{
+		Model:     anthropic.Model(c.model),
+		MaxTokens: maxTokens,
+		Messages: []anthropic.MessageParam{
 			anthropic.NewUserMessage(anthropic.NewTextBlock(clarificationPrompt)),
-		}),
+		},
 	})
 
 	if err != nil {
@@ -170,15 +174,17 @@ Please provide the corrected JSON array now:`, previousResponse)
 func (c *Client) GenerateDeepDive(ctx context.Context, idea *db.Idea) (string, error) {
 	prompt := c.buildDeepDivePrompt(idea)
 
+	maxTokens := int64(8192)
+	systemPrompt := deepDiveSystemPrompt
 	message, err := c.client.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.F(c.model),
-		MaxTokens: anthropic.Int(8192),
-		Messages: anthropic.F([]anthropic.MessageParam{
+		Model:     anthropic.Model(c.model),
+		MaxTokens: maxTokens,
+		Messages: []anthropic.MessageParam{
 			anthropic.NewUserMessage(anthropic.NewTextBlock(prompt)),
-		}),
-		System: anthropic.F([]anthropic.TextBlockParam{
-			anthropic.NewTextBlock(deepDiveSystemPrompt),
-		}),
+		},
+		System: []anthropic.TextBlockParam{
+			{Type: "text", Text: systemPrompt},
+		},
 	})
 
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/vib795/AI-Idea-Scout/internal/config"
 	"github.com/vib795/AI-Idea-Scout/internal/db"
-	"github.com/vib795/AI-Idea-Scout/internal/fetch"
+	"github.com/vib795/AI-Idea-Scout/internal/httpclient"
 )
 
 const (
@@ -23,13 +23,13 @@ const (
 
 type HackerNewsSource struct {
 	cfg    *config.Config
-	client *fetch.HTTPClient
+	client *httpclient.HTTPClient
 }
 
 func NewHackerNewsSource(cfg *config.Config) *HackerNewsSource {
 	return &HackerNewsSource{
 		cfg: cfg,
-		client: fetch.NewHTTPClient(
+		client: httpclient.NewHTTPClient(
 			"ideascout/1.0 (AI Idea Scout; +https://github.com/vib795/AI-Idea-Scout)",
 			1.0, // 1 req/sec for HN
 			true,

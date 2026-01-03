@@ -11,18 +11,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/vib795/AI-Idea-Scout/internal/config"
 	"github.com/vib795/AI-Idea-Scout/internal/db"
-	"github.com/vib795/AI-Idea-Scout/internal/fetch"
+	"github.com/vib795/AI-Idea-Scout/internal/httpclient"
 )
 
 type RedditSource struct {
 	cfg    *config.Config
-	client *fetch.HTTPClient
+	client *httpclient.HTTPClient
 }
 
 func NewRedditSource(cfg *config.Config) *RedditSource {
 	return &RedditSource{
 		cfg: cfg,
-		client: fetch.NewHTTPClient(
+		client: httpclient.NewHTTPClient(
 			"ideascout/1.0 (AI Idea Scout; +https://github.com/vib795/AI-Idea-Scout)",
 			0.3, // Reddit asks for < 60 requests per minute = 1 per second, so we use 0.3 to be safe
 			true,
